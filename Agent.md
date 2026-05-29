@@ -1,0 +1,62 @@
+# BoilerplateApp Agent Guide
+
+## Project Setup
+
+This repository is a .NET Aspire starter app built around a Blazor Web App and PostgreSQL.
+
+Main projects:
+
+- `BoilerplateApp.AppHost`: Aspire orchestration and service wiring
+- `BoilerplateApp.Web`: Blazor UI, Identity, EF Core, and application logic
+- `BoilerplateApp.ServiceDefaults`: shared Aspire/service defaults
+
+Key setup notes:
+
+- The web app targets `net10.0`.
+- PostgreSQL is provided through Aspire in `AppHost`.
+- The web app applies EF Core migrations and seeds roles/users during startup.
+- Authentication uses ASP.NET Core Identity with cookie auth.
+
+## How to Run the Project
+
+Prerequisites:
+
+- .NET 10 SDK
+- Docker or a local container runtime for Aspire PostgreSQL
+
+Run the app host from the repository root:
+
+```bash
+dotnet run --project BoilerplateApp.AppHost
+```
+
+What happens when it starts:
+
+- Aspire brings up PostgreSQL and pgAdmin.
+- `BoilerplateApp.Web` is launched and connected to the `contactdb` database.
+- Database migrations are applied automatically on startup.
+
+Useful companion commands:
+
+- Build the solution: `dotnet build`
+- Run only the web project for targeted debugging: `dotnet run --project BoilerplateApp.Web`
+
+## Overall Architecture
+
+The solution uses a simple Aspire-hosted application layout:
+
+- `AppHost` is the entry point. It defines the PostgreSQL resource, creates the `contactdb` database, and wires that database into the web project.
+- `Web` is the application surface. It contains the Razor components UI, authentication flow, user management pages, EF Core data layer, and middleware.
+- `ServiceDefaults` holds shared Aspire and observability configuration used by the app projects.
+
+Notable runtime behavior:
+
+- `BoilerplateApp.Web/Program.cs` registers Identity, authorization, EF Core, memory cache, and user activity tracking.
+- On startup, the web app migrates the database and seeds roles/admin data.
+- The UI is rendered with Razor components and interactive server rendering.
+- Navigation and page access are role-aware, with admin-only areas protected in the UI and by authorization.
+
+## Notes
+
+- If sign-in or sign-up behaves unexpectedly, check the Razor form binding and Identity configuration first.
+- If the app fails to start, confirm Docker is running and PostgreSQL is available to Aspire.
