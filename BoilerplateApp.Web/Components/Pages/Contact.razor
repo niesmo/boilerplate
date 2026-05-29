@@ -11,7 +11,10 @@
 @if (submitted)
 {
     <div class="alert alert-success" role="alert">
-        Message sent successfully! <a href="/messages">View all messages</a>
+        Message sent successfully!
+        <AuthorizeView Roles="@RoleConstants.Admin">
+            <a href="/messages">View all messages</a>
+        </AuthorizeView>
     </div>
 }
 

@@ -1,5 +1,5 @@
 @page "/messages"
-@attribute [Authorize]
+@attribute [Authorize(Roles = RoleConstants.Admin)]
 @rendermode InteractiveServer
 @inject IMessageService MessageService
 
