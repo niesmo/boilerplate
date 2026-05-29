@@ -36,13 +36,13 @@ dotnet restore
 dotnet build BoilerplateApp.sln
 ```
 
-2. Run the Aspire AppHost:
+1. Run the Aspire AppHost:
 
 ```bash
 dotnet run --project BoilerplateApp.AppHost
 ```
 
-3. Open the webfrontend URL shown in the Aspire output/dashboard.
+1. Open the webfrontend URL shown in the Aspire output/dashboard.
 
 ## Authentication and Data Initialization
 
@@ -52,11 +52,44 @@ dotnet run --project BoilerplateApp.AppHost
 
 Default development admin values:
 
-- Email: admin@local.test
+- Email: `admin@local.test`
 - Password: ChangeThisAdminPwd!123
 - Display Name: Local Admin
 
 Change these before using this template outside local development.
+
+## Running via Docker
+
+### Docker (standalone)
+
+Build the image from the solution root:
+
+```bash
+docker build -t boilerplate-web .
+```
+
+Run the container, supplying the PostgreSQL connection string as an environment variable:
+
+```bash
+docker run -p 8080:8080 \
+  -e ConnectionStrings__contactdb="Host=<pg-host>;Port=5432;Database=contactdb;Username=<user>;Password=<pass>" \
+  boilerplate-web
+```
+
+Open [http://localhost:8080](http://localhost:8080).
+
+### Docker Compose (app + database together)
+
+Start both services using the included `docker-compose.yml`:
+
+```bash
+docker compose up --build
+```
+
+Open [http://localhost:8080](http://localhost:8080).
+
+> The web app runs EF Core migrations automatically on startup, so no separate migration step is needed.
+> Replace the `changeme` password in `docker-compose.yml` before using outside local development.
 
 ## Testing
 
