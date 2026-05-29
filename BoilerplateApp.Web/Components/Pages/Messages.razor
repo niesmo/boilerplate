@@ -1,0 +1,43 @@
+@page "/messages"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AppDbContext Db
+
+<PageTitle>Messages</PageTitle>
+
+<h1>Submitted Messages</h1>
+
+@if (messages is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (messages.Count == 0)
+{
+    <p>No messages yet. <a href="/contact">Be the first to send one!</a></p>
+}
+else
+{
+    <p class="text-muted">@messages.Count message(s) received.</p>
+
+    @foreach (var msg in messages)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">@msg.Name</h5>
+                <h6 class="card-subtitle mb-2 text-muted">@msg.Email &mdash; @msg.CreatedAt.ToLocalTime().ToString("g")</h6>
+                <p class="card-text">@msg.Message</p>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<ContactMessage>? messages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        messages = await Db.ContactMessages
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
+    }
+}

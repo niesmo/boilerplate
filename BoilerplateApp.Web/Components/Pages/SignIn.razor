@@ -1,0 +1,104 @@
+@page "/signin"
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Sign In</PageTitle>
+
+<h1>Sign in</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@errorMessage</div>
+        }
+
+        <EditForm Model="model" OnValidSubmit="HandleSignInAsync" FormName="sign-in">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label class="form-label" for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="model.Email" />
+                <ValidationMessage For="@(() => model.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <InputText id="password" class="form-control" @bind-Value="model.Password" type="password" />
+                <ValidationMessage For="@(() => model.Password)" />
+            </div>
+
+            <div class="form-check mb-3">
+                <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="model.RememberMe" />
+                <label for="rememberMe" class="form-check-label">Remember me</label>
+            </div>
+
+            <button class="btn btn-primary" type="submit" disabled="@isSubmitting">
+                @(isSubmitting ? "Signing in..." : "Sign in")
+            </button>
+        </EditForm>
+
+        <p class="mt-3 mb-1"><a href="/signup">Create an account</a></p>
+        <p><a href="/forgot-password">Forgot your password?</a></p>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    private readonly SignInInput model = new();
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    private async Task HandleSignInAsync()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        var result = await SignInManager.PasswordSignInAsync(
+            model.Email,
+            model.Password,
+            model.RememberMe,
+            lockoutOnFailure: true);
+
+        isSubmitting = false;
+
+        if (result.Succeeded)
+        {
+            NavigationManager.NavigateTo(GetSafeReturnUrl(), forceLoad: true);
+            return;
+        }
+
+        if (result.IsLockedOut)
+        {
+            errorMessage = "This account is temporarily locked due to too many failed sign-in attempts.";
+            return;
+        }
+
+        errorMessage = "Invalid email or password.";
+    }
+
+    private string GetSafeReturnUrl()
+    {
+        if (string.IsNullOrWhiteSpace(ReturnUrl))
+        {
+            return "/";
+        }
+
+        return Uri.TryCreate(ReturnUrl, UriKind.Relative, out _) ? ReturnUrl : "/";
+    }
+
+    private sealed class SignInInput
+    {
+        [EmailAddress]
+        [Required]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+}

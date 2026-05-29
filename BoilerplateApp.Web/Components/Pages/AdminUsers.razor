@@ -1,0 +1,159 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = RoleConstants.Admin)]
+@rendermode InteractiveServer
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Admin Users</PageTitle>
+
+<h1>User Management</h1>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-info" role="alert">@statusMessage</div>
+}
+
+@if (users is null)
+{
+    <p><em>Loading users...</em></p>
+}
+else if (users.Count == 0)
+{
+    <p>No users found.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Display Name</th>
+                <th>Signed Up (UTC)</th>
+                <th>Last Seen (UTC)</th>
+                <th>Role</th>
+                <th>Lockout</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>@user.DisplayName</td>
+                    <td>@user.SignedUpAtUtc.ToString("u")</td>
+                    <td>@(user.LastSeenAtUtc?.ToString("u") ?? "-")</td>
+                    <td>
+                        <select class="form-select" @bind="user.SelectedRole">
+                            <option value="@RoleConstants.User">@RoleConstants.User</option>
+                            <option value="@RoleConstants.Admin">@RoleConstants.Admin</option>
+                        </select>
+                    </td>
+                    <td>@(user.LockoutEnd?.UtcDateTime.ToString("u") ?? "-")</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => UpdateRoleAsync(user)">Update role</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserRow>? users;
+    private string? statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        var userEntities = await UserManager.Users
+            .OrderBy(user => user.Email)
+            .ToListAsync();
+
+        var rows = new List<UserRow>(userEntities.Count);
+        foreach (var user in userEntities)
+        {
+            var roles = await UserManager.GetRolesAsync(user);
+            var selectedRole = roles.Contains(RoleConstants.Admin)
+                ? RoleConstants.Admin
+                : RoleConstants.User;
+
+            rows.Add(new UserRow
+            {
+                UserId = user.Id,
+                Email = user.Email ?? string.Empty,
+                DisplayName = user.DisplayName ?? string.Empty,
+                SignedUpAtUtc = user.SignedUpAtUtc,
+                LastSeenAtUtc = user.LastSeenAtUtc,
+                SelectedRole = selectedRole,
+                LockoutEnd = user.LockoutEnd,
+            });
+        }
+
+        users = rows;
+    }
+
+    private async Task UpdateRoleAsync(UserRow row)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var currentUserId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var targetUser = await UserManager.FindByIdAsync(row.UserId);
+        if (targetUser is null)
+        {
+            statusMessage = "The selected user no longer exists.";
+            return;
+        }
+
+        if (row.UserId == currentUserId && row.SelectedRole != RoleConstants.Admin)
+        {
+            var adminCount = (await UserManager.GetUsersInRoleAsync(RoleConstants.Admin)).Count;
+            if (adminCount <= 1)
+            {
+                statusMessage = "You cannot remove the last Admin role from your own account.";
+                return;
+            }
+        }
+
+        var currentRoles = await UserManager.GetRolesAsync(targetUser);
+        var rolesToRemove = currentRoles.Where(role => role != row.SelectedRole).ToArray();
+
+        if (rolesToRemove.Length > 0)
+        {
+            var removeResult = await UserManager.RemoveFromRolesAsync(targetUser, rolesToRemove);
+            if (!removeResult.Succeeded)
+            {
+                statusMessage = "Failed to remove existing role assignments.";
+                return;
+            }
+        }
+
+        if (!currentRoles.Contains(row.SelectedRole))
+        {
+            var addResult = await UserManager.AddToRoleAsync(targetUser, row.SelectedRole);
+            if (!addResult.Succeeded)
+            {
+                statusMessage = "Failed to assign the selected role.";
+                return;
+            }
+        }
+
+        statusMessage = $"Updated role for {row.Email} to {row.SelectedRole}.";
+        await LoadUsersAsync();
+    }
+
+    private sealed class UserRow
+    {
+        public required string UserId { get; init; }
+        public required string Email { get; init; }
+        public required string DisplayName { get; init; }
+        public required DateTime SignedUpAtUtc { get; init; }
+        public DateTime? LastSeenAtUtc { get; init; }
+        public required string SelectedRole { get; set; }
+        public DateTimeOffset? LockoutEnd { get; init; }
+    }
+}

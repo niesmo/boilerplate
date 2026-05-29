@@ -1,0 +1,64 @@
+@page "/contact"
+@rendermode InteractiveServer
+@inject AppDbContext Db
+@inject NavigationManager Nav
+
+<PageTitle>Contact</PageTitle>
+
+<h1>Contact Us</h1>
+<p>Fill in the form below to send us a message.</p>
+
+@if (submitted)
+{
+    <div class="alert alert-success" role="alert">
+        Message sent successfully! <a href="/messages">View all messages</a>
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@model" OnValidSubmit="@HandleSubmitAsync" FormName="contact">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <InputText id="name" class="form-control" @bind-Value="model.Name" />
+                <ValidationMessage For="@(() => model.Name)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="model.Email" />
+                <ValidationMessage For="@(() => model.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="message" class="form-label">Message</label>
+                <InputTextArea id="message" class="form-control" rows="5" @bind-Value="model.Message" />
+                <ValidationMessage For="@(() => model.Message)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" disabled="@submitting">
+                @(submitting ? "Sending..." : "Send Message")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private ContactMessage model = new();
+    private bool submitting;
+    private bool submitted;
+
+    private async Task HandleSubmitAsync()
+    {
+        submitting = true;
+        model.CreatedAt = DateTime.UtcNow;
+        Db.ContactMessages.Add(model);
+        await Db.SaveChangesAsync();
+        submitted = true;
+        model = new();
+        submitting = false;
+    }
+}

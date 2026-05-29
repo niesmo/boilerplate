@@ -1,0 +1,26 @@
+# Build artifacts
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+
+# IDE directories
+.vs/
+.vscode/
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg
+*.snupkg
+
+# Dotnet tools/temp
+artifacts/
+TestResults/

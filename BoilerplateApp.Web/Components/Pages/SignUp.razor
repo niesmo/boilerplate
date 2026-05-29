@@ -1,0 +1,126 @@
+@page "/signup"
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Sign Up</PageTitle>
+
+<h1>Create an account</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success" role="alert">@successMessage</div>
+        }
+
+        @if (errors.Count > 0)
+        {
+            <div class="alert alert-danger" role="alert">
+                <ul class="mb-0">
+                    @foreach (var error in errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <EditForm Model="model" OnValidSubmit="HandleSignUpAsync" FormName="sign-up">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label class="form-label" for="displayName">Display name</label>
+                <InputText id="displayName" class="form-control" @bind-Value="model.DisplayName" />
+                <ValidationMessage For="@(() => model.DisplayName)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="model.Email" />
+                <ValidationMessage For="@(() => model.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <InputText id="password" class="form-control" type="password" @bind-Value="model.Password" />
+                <ValidationMessage For="@(() => model.Password)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="confirmPassword">Confirm password</label>
+                <InputText id="confirmPassword" class="form-control" type="password" @bind-Value="model.ConfirmPassword" />
+                <ValidationMessage For="@(() => model.ConfirmPassword)" />
+            </div>
+
+            <button class="btn btn-primary" type="submit" disabled="@isSubmitting">
+                @(isSubmitting ? "Creating account..." : "Create account")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly SignUpInput model = new();
+    private readonly List<string> errors = [];
+    private bool isSubmitting;
+    private string? successMessage;
+
+    private async Task HandleSignUpAsync()
+    {
+        isSubmitting = true;
+        successMessage = null;
+        errors.Clear();
+
+        var user = new ApplicationUser
+        {
+            UserName = model.Email,
+            Email = model.Email,
+            DisplayName = model.DisplayName,
+            SignedUpAtUtc = DateTime.UtcNow,
+            LastSeenAtUtc = DateTime.UtcNow,
+        };
+
+        var createResult = await UserManager.CreateAsync(user, model.Password);
+        if (!createResult.Succeeded)
+        {
+            errors.AddRange(createResult.Errors.Select(error => error.Description));
+            isSubmitting = false;
+            return;
+        }
+
+        var roleResult = await UserManager.AddToRoleAsync(user, RoleConstants.User);
+        if (!roleResult.Succeeded)
+        {
+            errors.AddRange(roleResult.Errors.Select(error => error.Description));
+            isSubmitting = false;
+            return;
+        }
+
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        successMessage = "Account created successfully.";
+        isSubmitting = false;
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    private sealed class SignUpInput
+    {
+        [Required]
+        [MaxLength(100)]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [Compare(nameof(Password))]
+        [DataType(DataType.Password)]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

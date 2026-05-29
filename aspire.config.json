@@ -1,0 +1,5 @@
+{
+  "appHost": {
+    "path": "BoilerplateApp.AppHost/BoilerplateApp.AppHost.csproj"
+  }
+}

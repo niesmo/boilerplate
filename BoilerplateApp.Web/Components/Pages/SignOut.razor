@@ -1,0 +1,15 @@
+@page "/signout"
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Sign Out</PageTitle>
+
+<h1>Signing out...</h1>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/signin", forceLoad: true);
+    }
+}
