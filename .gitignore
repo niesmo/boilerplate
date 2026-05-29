@@ -24,3 +24,5 @@
 # Dotnet tools/temp
 artifacts/
 TestResults/
+
+.fake
