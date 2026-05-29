@@ -41,6 +41,8 @@ builder.Services
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserActivityTracker, UserActivityTracker>();
 
 // Add services to the container.

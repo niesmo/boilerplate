@@ -1,6 +1,6 @@
 @page "/contact"
 @rendermode InteractiveServer
-@inject AppDbContext Db
+@inject IMessageService MessageService
 @inject NavigationManager Nav
 
 <PageTitle>Contact</PageTitle>
@@ -54,9 +54,7 @@
     private async Task HandleSubmitAsync()
     {
         submitting = true;
-        model.CreatedAt = DateTime.UtcNow;
-        Db.ContactMessages.Add(model);
-        await Db.SaveChangesAsync();
+        await MessageService.SubmitAsync(model);
         submitted = true;
         model = new();
         submitting = false;
