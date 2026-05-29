@@ -7,7 +7,19 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized Context="authState">
+                    <div class="auth-actions">
+                        <div class="user-initials" title="@authState.User.Identity?.Name">@GetInitials(authState.User)</div>
+                        <a class="auth-link" href="signout">Sign Out</a>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="auth-actions">
+                        <a class="auth-link" href="signin">Sign In</a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
@@ -21,3 +33,25 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private static string GetInitials(ClaimsPrincipal user)
+    {
+        var displayName = user.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return "U";
+        }
+
+        var parts = displayName
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (parts.Length == 1)
+        {
+            return parts[0][0].ToString().ToUpperInvariant();
+        }
+
+        return string.Concat(parts[0][0], parts[^1][0]).ToUpperInvariant();
+    }
+}

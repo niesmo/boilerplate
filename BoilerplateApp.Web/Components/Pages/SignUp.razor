@@ -26,32 +26,32 @@
             </div>
         }
 
-        <EditForm Model="model" OnValidSubmit="HandleSignUpAsync" FormName="sign-up">
+        <EditForm method="post" Model="model" OnValidSubmit="HandleSignUpAsync" FormName="sign-up">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
 
             <div class="mb-3">
                 <label class="form-label" for="displayName">Display name</label>
-                <InputText id="displayName" class="form-control" @bind-Value="model.DisplayName" />
-                <ValidationMessage For="@(() => model.DisplayName)" />
+                <InputText id="displayName" class="form-control" @bind-Value="model!.DisplayName" />
+                <ValidationMessage For="@(() => model!.DisplayName)" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label" for="email">Email</label>
-                <InputText id="email" class="form-control" @bind-Value="model.Email" />
-                <ValidationMessage For="@(() => model.Email)" />
+                <InputText id="email" class="form-control" @bind-Value="model!.Email" />
+                <ValidationMessage For="@(() => model!.Email)" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label" for="password">Password</label>
-                <InputText id="password" class="form-control" type="password" @bind-Value="model.Password" />
-                <ValidationMessage For="@(() => model.Password)" />
+                <InputText id="password" class="form-control" type="password" @bind-Value="model!.Password" />
+                <ValidationMessage For="@(() => model!.Password)" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label" for="confirmPassword">Confirm password</label>
-                <InputText id="confirmPassword" class="form-control" type="password" @bind-Value="model.ConfirmPassword" />
-                <ValidationMessage For="@(() => model.ConfirmPassword)" />
+                <InputText id="confirmPassword" class="form-control" type="password" @bind-Value="model!.ConfirmPassword" />
+                <ValidationMessage For="@(() => model!.ConfirmPassword)" />
             </div>
 
             <button class="btn btn-primary" type="submit" disabled="@isSubmitting">
@@ -62,10 +62,16 @@
 </div>
 
 @code {
-    private readonly SignUpInput model = new();
+    [SupplyParameterFromForm]
+    private SignUpInput? model { get; set; }
     private readonly List<string> errors = [];
     private bool isSubmitting;
     private string? successMessage;
+
+    protected override void OnInitialized()
+    {
+        model ??= new();
+    }
 
     private async Task HandleSignUpAsync()
     {
@@ -75,7 +81,7 @@
 
         var user = new ApplicationUser
         {
-            UserName = model.Email,
+            UserName = model!.Email,
             Email = model.Email,
             DisplayName = model.DisplayName,
             SignedUpAtUtc = DateTime.UtcNow,

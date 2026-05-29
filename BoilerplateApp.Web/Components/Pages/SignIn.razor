@@ -13,24 +13,24 @@
             <div class="alert alert-danger" role="alert">@errorMessage</div>
         }
 
-        <EditForm Model="model" OnValidSubmit="HandleSignInAsync" FormName="sign-in">
+        <EditForm method="post" Model="model" OnValidSubmit="HandleSignInAsync" FormName="sign-in">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
 
             <div class="mb-3">
                 <label class="form-label" for="email">Email</label>
-                <InputText id="email" class="form-control" @bind-Value="model.Email" />
-                <ValidationMessage For="@(() => model.Email)" />
+                <InputText id="email" class="form-control" @bind-Value="model!.Email" />
+                <ValidationMessage For="@(() => model!.Email)" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label" for="password">Password</label>
-                <InputText id="password" class="form-control" @bind-Value="model.Password" type="password" />
-                <ValidationMessage For="@(() => model.Password)" />
+                <InputText id="password" class="form-control" @bind-Value="model!.Password" type="password" />
+                <ValidationMessage For="@(() => model!.Password)" />
             </div>
 
             <div class="form-check mb-3">
-                <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="model.RememberMe" />
+                <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="model!.RememberMe" />
                 <label for="rememberMe" class="form-check-label">Remember me</label>
             </div>
 
@@ -48,9 +48,15 @@
     [SupplyParameterFromQuery]
     public string? ReturnUrl { get; set; }
 
-    private readonly SignInInput model = new();
+    [SupplyParameterFromForm]
+    private SignInInput? model { get; set; }
     private bool isSubmitting;
     private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        model ??= new();
+    }
 
     private async Task HandleSignInAsync()
     {
@@ -58,7 +64,7 @@
         errorMessage = null;
 
         var result = await SignInManager.PasswordSignInAsync(
-            model.Email,
+            model!.Email,
             model.Password,
             model.RememberMe,
             lockoutOnFailure: true);
